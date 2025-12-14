@@ -1,0 +1,95 @@
+{
+  "name": "shadowmsg",
+  "description": "macOS Messages CLI - Search and browse your messages",
+  "version": "0.1.1",
+  "author": "nacyot",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nacyot/shadowmsg.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nacyot/shadowmsg/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://github.com/nacyot/shadowmsg#readme",
+  "keywords": [
+    "macos",
+    "messages",
+    "imessage",
+    "sms",
+    "cli",
+    "search",
+    "sqlite",
+    "fts5"
+  ],
+  "bin": {
+    "shadowmsg": "./bin/run.js",
+    "sm": "./bin/run.js"
+  },
+  "type": "module",
+  "dependencies": {
+    "@oclif/core": "^4",
+    "@oclif/plugin-help": "^6",
+    "better-sqlite3": "^11.6.0",
+    "chalk": "^5.4.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "oclif": "^4.22.56",
+    "shx": "^0.3.4",
+    "typescript": "^5",
+    "typescript-eslint": "^8.48.0",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "./bin",
+    "./dist",
+    "./docs",
+    "./oclif.manifest.json"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "oclif": {
+    "bin": "sm",
+    "dirname": "shadowmsg",
+    "commands": "./dist/commands",
+    "plugins": [
+      "@oclif/plugin-help"
+    ],
+    "topicSeparator": " ",
+    "topics": {
+      "message": {
+        "description": "Browse and view messages"
+      },
+      "sender": {
+        "description": "Manage sender aliases"
+      },
+      "contact": {
+        "description": "View synced contacts"
+      },
+      "sync": {
+        "description": "Sync messages from Messages.app"
+      }
+    }
+  },
+  "scripts": {
+    "build": "shx rm -rf dist && tsc -b",
+    "lint": "eslint src test",
+    "postpack": "shx rm -f oclif.manifest.json",
+    "prepack": "npm run build && oclif manifest",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "local-install": "./install.sh"
+  },
+  "types": "dist/index.d.ts"
+}

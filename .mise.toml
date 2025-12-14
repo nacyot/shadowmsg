@@ -1,0 +1,9 @@
+[env]
+_.file = [".env", ".env.local"]
+
+[tools]
+node = "22.18.0"
+
+[tasks.release]
+run = "bash mise/release.sh"
+description = "Release a new version of shadowmsg to npm"
