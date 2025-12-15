@@ -1,4 +1,4 @@
-import Database, { Database as DatabaseType } from 'better-sqlite3'
+import { Database } from 'bun:sqlite'
 import {
   getSourceDbPath,
   findAddressBookDbs,
@@ -15,7 +15,7 @@ interface SyncResult {
 }
 
 export async function syncAll(
-  shadowDb: DatabaseType,
+  shadowDb: Database,
   options: { cleanup?: boolean } = {}
 ): Promise<SyncResult> {
   const result: SyncResult = {
@@ -27,14 +27,13 @@ export async function syncAll(
 
   const sourceDbPath = getSourceDbPath()
 
-  let sourceDb: DatabaseType | null = null
+  let sourceDb: Database | null = null
   try {
     sourceDb = new Database(sourceDbPath, {
       readonly: true,
-      fileMustExist: true,
-      timeout: 3000,
+      create: false,
     })
-    sourceDb.pragma('busy_timeout = 2500')
+    sourceDb.exec('PRAGMA busy_timeout = 2500')
   } catch (error) {
     throw new Error(
       `Cannot open Messages database: ${error instanceof Error ? error.message : error}`
@@ -84,38 +83,36 @@ export async function syncAll(
   return result
 }
 
-function syncHandles(sourceDb: DatabaseType, shadowDb: DatabaseType): number {
+function syncHandles(sourceDb: Database, shadowDb: Database): number {
   const lastRowid = shadowDb
-    .prepare(`SELECT last_rowid FROM sync_state WHERE table_name = 'handle'`)
+    .query(`SELECT last_rowid FROM sync_state WHERE table_name = 'handle'`)
     .get() as { last_rowid: number }
 
   const rows = sourceDb
-    .prepare(
-      `SELECT ROWID, id, service FROM handle WHERE ROWID > ?`
-    )
-    .all(lastRowid.last_rowid)
+    .query(`SELECT ROWID, id, service FROM handle WHERE ROWID > ?`)
+    .all(lastRowid.last_rowid) as Array<{ ROWID: number; id: string; service: string }>
 
   if (rows.length === 0) return 0
 
-  const insert = shadowDb.prepare(`
+  const insert = shadowDb.query(`
     INSERT OR REPLACE INTO handle (ROWID, id, service)
-    VALUES (@ROWID, @id, @service)
+    VALUES (?, ?, ?)
   `)
 
   for (const row of rows) {
-    insert.run(row)
+    insert.run(row.ROWID, row.id, row.service)
   }
 
   return rows.length
 }
 
-function syncMessages(sourceDb: DatabaseType, shadowDb: DatabaseType): number {
+function syncMessages(sourceDb: Database, shadowDb: Database): number {
   const lastRowid = shadowDb
-    .prepare(`SELECT last_rowid FROM sync_state WHERE table_name = 'message'`)
+    .query(`SELECT last_rowid FROM sync_state WHERE table_name = 'message'`)
     .get() as { last_rowid: number }
 
   const rows = sourceDb
-    .prepare(
+    .query(
       `SELECT
         ROWID,
         guid,
@@ -135,13 +132,13 @@ function syncMessages(sourceDb: DatabaseType, shadowDb: DatabaseType): number {
     date: number
     is_from_me: number
     text: string | null
-    attributedBody: Buffer | null
+    attributedBody: Uint8Array | null
     cache_has_attachments: number
   }>
 
   if (rows.length === 0) return 0
 
-  const insert = shadowDb.prepare(`
+  const insert = shadowDb.query(`
     INSERT OR REPLACE INTO message
     (ROWID, guid, handle_id, date, is_from_me, text, text_extracted, text_syllables, cache_has_attachments)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -255,20 +252,20 @@ function updateFtsIndexes(shadowDb: DatabaseType): void {
 }
 
 function updateSyncState(
-  sourceDb: DatabaseType,
-  shadowDb: DatabaseType
+  sourceDb: Database,
+  shadowDb: Database
 ): void {
   const tables = ['handle', 'message', 'attachment', 'message_attachment_join']
 
   for (const table of tables) {
     const sourceTable = table === 'message_attachment_join' ? table : table
     const result = sourceDb
-      .prepare(`SELECT MAX(ROWID) as maxRowid FROM ${sourceTable}`)
+      .query(`SELECT MAX(ROWID) as maxRowid FROM ${sourceTable}`)
       .get() as { maxRowid: number | null }
 
     if (result.maxRowid !== null) {
       shadowDb
-        .prepare(
+        .query(
           `UPDATE sync_state SET last_rowid = ?, last_sync_at = datetime('now')
            WHERE table_name = ?`
         )
@@ -277,7 +274,7 @@ function updateSyncState(
   }
 }
 
-function syncContacts(shadowDb: DatabaseType): number {
+function syncContacts(shadowDb: Database): number {
   const addressBookDbs = findAddressBookDbs()
   if (addressBookDbs.length === 0) return 0
 
@@ -288,10 +285,10 @@ function syncContacts(shadowDb: DatabaseType): number {
 
   for (const dbPath of addressBookDbs) {
     try {
-      const abDb = new Database(dbPath, { readonly: true })
+      const abDb = new Database(dbPath, { readonly: true, create: false })
 
       const contacts = abDb
-        .prepare(
+        .query(
           `SELECT
             COALESCE(r.ZFIRSTNAME, '') || ' ' || COALESCE(r.ZLASTNAME, '') AS name,
             r.ZORGANIZATION AS organization,
@@ -306,7 +303,7 @@ function syncContacts(shadowDb: DatabaseType): number {
         phone: string
       }>
 
-      const insert = shadowDb.prepare(`
+      const insert = shadowDb.query(`
         INSERT OR REPLACE INTO contact (phone_normalized, name, organization, phone_original)
         VALUES (?, ?, ?, ?)
       `)
@@ -342,12 +339,12 @@ function normalizePhone(phone: string): string {
 }
 
 function cleanupOrphanRecords(
-  shadowDb: DatabaseType,
+  shadowDb: Database,
   sourceDbPath: string
 ): void {
-  let sourceDb: DatabaseType | null = null
+  let sourceDb: Database | null = null
   try {
-    sourceDb = new Database(sourceDbPath, { readonly: true })
+    sourceDb = new Database(sourceDbPath, { readonly: true, create: false })
 
     // Soft delete orphan messages
     shadowDb.exec(`

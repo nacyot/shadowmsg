@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import Database from 'better-sqlite3'
+import { Database } from 'bun:sqlite'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
@@ -7,7 +7,7 @@ import { initializeSchema } from '../../src/services/database.js'
 
 describe('database integration', () => {
   let testDbPath: string
-  let db: Database.Database
+  let db: Database
 
   beforeEach(() => {
     // Create a temp database for testing
@@ -27,7 +27,7 @@ describe('database integration', () => {
       initializeSchema(db)
 
       const tables = db
-        .prepare(
+        .query(
           `SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`
         )
         .all() as Array<{ name: string }>
@@ -46,7 +46,7 @@ describe('database integration', () => {
       initializeSchema(db)
 
       const tables = db
-        .prepare(
+        .query(
           `SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'fts_%'`
         )
         .all() as Array<{ name: string }>
@@ -61,7 +61,7 @@ describe('database integration', () => {
       initializeSchema(db)
 
       const states = db
-        .prepare(`SELECT table_name, last_rowid FROM sync_state`)
+        .query(`SELECT table_name, last_rowid FROM sync_state`)
         .all() as Array<{ table_name: string; last_rowid: number }>
 
       expect(states.length).toBe(4)
@@ -77,7 +77,7 @@ describe('database integration', () => {
       initializeSchema(db)
 
       const tables = db
-        .prepare(
+        .query(
           `SELECT name FROM sqlite_master WHERE type='table' AND name='message'`
         )
         .all()
@@ -90,12 +90,12 @@ describe('database integration', () => {
     it('should allow adding and retrieving aliases', () => {
       initializeSchema(db)
 
-      db.prepare(
+      db.query(
         `INSERT INTO sender_alias (phone_normalized, alias) VALUES (?, ?)`
       ).run('+1234567890', 'Amazon')
 
       const alias = db
-        .prepare(
+        .query(
           `SELECT alias FROM sender_alias WHERE phone_normalized = ?`
         )
         .get('+1234567890') as { alias: string }

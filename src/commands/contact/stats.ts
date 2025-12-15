@@ -35,7 +35,7 @@ export default class ContactStats extends BaseCommand {
 
     const db = getDatabase()
 
-    const stats = db.prepare(`
+    const stats = db.query(`
       SELECT
         COALESCE(sa.alias, NULLIF(TRIM(c.name), ''), c.organization, h.id) as sender,
         h.id as phone,

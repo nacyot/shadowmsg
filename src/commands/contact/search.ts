@@ -34,7 +34,7 @@ export default class ContactSearch extends BaseCommand {
 
     const db = getDatabase()
 
-    const contacts = db.prepare(`
+    const contacts = db.query(`
       SELECT
         c.phone_normalized,
         c.name,

@@ -137,7 +137,7 @@ export default class Query extends BaseCommand {
     const db = getDatabase()
 
     try {
-      const stmt = db.prepare(sql)
+      const stmt = db.query(sql)
       const isSelect = sql.trim().toUpperCase().startsWith('SELECT')
 
       if (isSelect) {

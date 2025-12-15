@@ -42,16 +42,16 @@ export default class SenderAdd extends BaseCommand {
 
     // Check if alias already exists
     const existing = db
-      .prepare(`SELECT alias FROM sender_alias WHERE phone_normalized = ?`)
+      .query(`SELECT alias FROM sender_alias WHERE phone_normalized = ?`)
       .get(phone) as { alias: string } | undefined
 
     if (existing) {
-      db.prepare(
+      db.query(
         `UPDATE sender_alias SET alias = ? WHERE phone_normalized = ?`
       ).run(args.alias, phone)
       this.log(chalk.green('✓') + ` Updated alias: ${phone} → ${args.alias}`)
     } else {
-      db.prepare(
+      db.query(
         `INSERT INTO sender_alias (phone_normalized, alias) VALUES (?, ?)`
       ).run(phone, args.alias)
       this.log(chalk.green('✓') + ` Added alias: ${phone} → ${args.alias}`)

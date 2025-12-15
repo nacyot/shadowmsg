@@ -39,7 +39,7 @@ export default class MessageGet extends BaseCommand {
 
     const db = getDatabase()
 
-    const message = db.prepare(`
+    const message = db.query(`
       SELECT
         m.ROWID as rowid,
         m.guid,

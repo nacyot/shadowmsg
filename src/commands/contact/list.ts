@@ -62,7 +62,7 @@ export default class ContactList extends BaseCommand {
       `
     }
 
-    const contacts = db.prepare(sql).all(flags.limit) as Array<{
+    const contacts = db.query(sql).all(flags.limit) as Array<{
       phone_normalized: string
       name: string
       organization: string | null

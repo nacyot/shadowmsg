@@ -1,4 +1,4 @@
-import { Database as DatabaseType } from 'better-sqlite3'
+import { Database } from 'bun:sqlite'
 
 /**
  * Parse query into terms for AND search.
@@ -45,7 +45,7 @@ export interface SearchResult {
 }
 
 export function searchMessages(
-  db: DatabaseType,
+  db: Database,
   query: string,
   options: SearchOptions = {}
 ): SearchResult {
@@ -58,7 +58,7 @@ export function searchMessages(
 }
 
 function search(
-  db: DatabaseType,
+  db: Database,
   query: string,
   options: SearchOptions
 ): MessageResult[] {
@@ -111,11 +111,11 @@ function search(
   sql += ` ORDER BY m.date DESC LIMIT ? OFFSET ?`
   params.push(limit, offset)
 
-  return db.prepare(sql).all(...params) as MessageResult[]
+  return db.query(sql).all(...params) as MessageResult[]
 }
 
 function count(
-  db: DatabaseType,
+  db: Database,
   query: string,
   options: Omit<SearchOptions, 'limit' | 'offset'>
 ): number {
@@ -154,7 +154,7 @@ function count(
     params.push(toMacOSTimestamp(before))
   }
 
-  const result = db.prepare(sql).get(...params) as { count: number }
+  const result = db.query(sql).get(...params) as { count: number }
   return result.count
 }
 

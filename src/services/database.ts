@@ -1,4 +1,4 @@
-import Database, { Database as DatabaseType } from 'better-sqlite3'
+import { Database } from 'bun:sqlite'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
@@ -11,7 +11,7 @@ const SHADOW_DB_PATH = path.join(SHADOWMSG_DIR, 'shadow.db')
 const STATE_PATH = path.join(SHADOWMSG_DIR, 'state.json')
 const AUTO_SYNC_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
 
-let dbInstance: DatabaseType | null = null
+let dbInstance: Database | null = null
 
 export function getShadowMsgDir(): string {
   return SHADOWMSG_DIR
@@ -27,12 +27,12 @@ export function ensureShadowMsgDir(): void {
   }
 }
 
-export function getDatabase(): DatabaseType {
+export function getDatabase(): Database {
   if (dbInstance) return dbInstance
 
   ensureShadowMsgDir()
   dbInstance = new Database(SHADOW_DB_PATH)
-  dbInstance.pragma('journal_mode = WAL')
+  dbInstance.exec('PRAGMA journal_mode = WAL')
   return dbInstance
 }
 
@@ -48,7 +48,7 @@ export function isDatabaseInitialized(): boolean {
 
   try {
     const db = getDatabase()
-    const result = db.prepare(`
+    const result = db.query(`
       SELECT name FROM sqlite_master
       WHERE type='table' AND name='message'
     `).get()
@@ -58,7 +58,7 @@ export function isDatabaseInitialized(): boolean {
   }
 }
 
-export function initializeSchema(db: DatabaseType): void {
+export function initializeSchema(db: Database): void {
   db.exec(`
     -- handle table
     CREATE TABLE IF NOT EXISTS handle (
@@ -177,7 +177,7 @@ export function updateLastSyncAt(): void {
   saveState(state)
 }
 
-export function shouldAutoSync(_db: DatabaseType): boolean {
+export function shouldAutoSync(_db: Database): boolean {
   if (!isDatabaseInitialized()) return false
 
   const lastSync = getLastSyncAt()

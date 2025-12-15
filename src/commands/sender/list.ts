@@ -28,7 +28,7 @@ export default class SenderList extends BaseCommand {
     const db = getDatabase()
 
     const aliases = db
-      .prepare(
+      .query(
         `SELECT phone_normalized, alias, created_at FROM sender_alias ORDER BY created_at DESC`
       )
       .all() as Array<{

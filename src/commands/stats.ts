@@ -53,15 +53,15 @@ export default class Stats extends BaseCommand {
   }
 
   private showOverallStats(db: ReturnType<typeof getDatabase>, json: boolean): void {
-    const totalMessages = (db.prepare(`SELECT COUNT(*) as count FROM message WHERE deleted_at IS NULL`).get() as { count: number }).count
-    const totalHandles = (db.prepare(`SELECT COUNT(*) as count FROM handle`).get() as { count: number }).count
-    const totalContacts = (db.prepare(`SELECT COUNT(*) as count FROM contact`).get() as { count: number }).count
-    const totalAliases = (db.prepare(`SELECT COUNT(*) as count FROM sender_alias`).get() as { count: number }).count
+    const totalMessages = (db.query(`SELECT COUNT(*) as count FROM message WHERE deleted_at IS NULL`).get() as { count: number }).count
+    const totalHandles = (db.query(`SELECT COUNT(*) as count FROM handle`).get() as { count: number }).count
+    const totalContacts = (db.query(`SELECT COUNT(*) as count FROM contact`).get() as { count: number }).count
+    const totalAliases = (db.query(`SELECT COUNT(*) as count FROM sender_alias`).get() as { count: number }).count
 
-    const received = (db.prepare(`SELECT COUNT(*) as count FROM message WHERE is_from_me = 0 AND deleted_at IS NULL`).get() as { count: number }).count
-    const sent = (db.prepare(`SELECT COUNT(*) as count FROM message WHERE is_from_me = 1 AND deleted_at IS NULL`).get() as { count: number }).count
+    const received = (db.query(`SELECT COUNT(*) as count FROM message WHERE is_from_me = 0 AND deleted_at IS NULL`).get() as { count: number }).count
+    const sent = (db.query(`SELECT COUNT(*) as count FROM message WHERE is_from_me = 1 AND deleted_at IS NULL`).get() as { count: number }).count
 
-    const dateRange = db.prepare(`
+    const dateRange = db.query(`
       SELECT
         MIN(date) as min_date,
         MAX(date) as max_date
@@ -119,7 +119,7 @@ export default class Stats extends BaseCommand {
   }
 
   private showYearlyStats(db: ReturnType<typeof getDatabase>, json: boolean): void {
-    const stats = db.prepare(`
+    const stats = db.query(`
       SELECT
         strftime('%Y', date/1000000000+strftime('%s','2001-01-01'), 'unixepoch', 'localtime') AS year,
         COUNT(*) AS total,
@@ -170,7 +170,7 @@ export default class Stats extends BaseCommand {
 
     sql += ` GROUP BY month ORDER BY month DESC LIMIT 24`
 
-    const stats = db.prepare(sql).all(...params) as Array<{ month: string; total: number; received: number; sent: number }>
+    const stats = db.query(sql).all(...params) as Array<{ month: string; total: number; received: number; sent: number }>
 
     if (json) {
       this.log(JSON.stringify(stats, null, 2))

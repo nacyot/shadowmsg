@@ -35,14 +35,14 @@ export default class SenderRemove extends BaseCommand {
 
     // Check if alias exists
     const existing = db
-      .prepare(`SELECT alias FROM sender_alias WHERE phone_normalized = ?`)
+      .query(`SELECT alias FROM sender_alias WHERE phone_normalized = ?`)
       .get(phone) as { alias: string } | undefined
 
     if (!existing) {
       this.error(`No alias found for ${phone}`)
     }
 
-    db.prepare(`DELETE FROM sender_alias WHERE phone_normalized = ?`).run(phone)
+    db.query(`DELETE FROM sender_alias WHERE phone_normalized = ?`).run(phone)
     this.log(chalk.green('✓') + ` Removed alias for ${phone} (was: ${existing.alias})`)
   }
 }

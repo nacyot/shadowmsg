@@ -45,7 +45,7 @@ export default class MessageContext extends BaseCommand {
     const db = getDatabase()
 
     // Get the target message to find its handle_id
-    const target = db.prepare(`
+    const target = db.query(`
       SELECT handle_id, date FROM message WHERE ROWID = ?
     `).get(args.rowid) as { handle_id: number; date: number } | undefined
 
@@ -54,7 +54,7 @@ export default class MessageContext extends BaseCommand {
     }
 
     // Get messages before and after with the same handle_id
-    const messages = db.prepare(`
+    const messages = db.query(`
       SELECT
         m.ROWID as rowid,
         m.date,

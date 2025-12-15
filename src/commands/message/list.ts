@@ -146,7 +146,7 @@ export default class MessageList extends BaseCommand {
     sql += ` LIMIT ? OFFSET ?`
     params.push(flags.limit, flags.offset)
 
-    const results = db.prepare(sql).all(...params) as Array<{
+    const results = db.query(sql).all(...params) as Array<{
       rowid: number
       guid: string
       handle_id: number

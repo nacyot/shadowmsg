@@ -37,7 +37,7 @@ export default class SenderSuggest extends BaseCommand {
 
     // Find phone numbers with most messages that don't have aliases
     const suggestions = db
-      .prepare(
+      .query(
         `SELECT
           h.id as phone,
           COUNT(*) as message_count,

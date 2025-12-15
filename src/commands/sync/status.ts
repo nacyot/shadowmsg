@@ -22,7 +22,7 @@ export default class SyncStatus extends Command {
 
     // Get sync state
     const syncStates = db
-      .prepare(
+      .query(
         `SELECT table_name, last_rowid, last_sync_at FROM sync_state ORDER BY table_name`
       )
       .all() as Array<{
@@ -34,22 +34,22 @@ export default class SyncStatus extends Command {
     // Get counts
     const counts = {
       messages: (
-        db.prepare(`SELECT COUNT(*) as count FROM message`).get() as {
+        db.query(`SELECT COUNT(*) as count FROM message`).get() as {
           count: number
         }
       ).count,
       handles: (
-        db.prepare(`SELECT COUNT(*) as count FROM handle`).get() as {
+        db.query(`SELECT COUNT(*) as count FROM handle`).get() as {
           count: number
         }
       ).count,
       contacts: (
-        db.prepare(`SELECT COUNT(*) as count FROM contact`).get() as {
+        db.query(`SELECT COUNT(*) as count FROM contact`).get() as {
           count: number
         }
       ).count,
       aliases: (
-        db.prepare(`SELECT COUNT(*) as count FROM sender_alias`).get() as {
+        db.query(`SELECT COUNT(*) as count FROM sender_alias`).get() as {
           count: number
         }
       ).count,

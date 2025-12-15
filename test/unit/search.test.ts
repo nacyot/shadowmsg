@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import Database from 'better-sqlite3'
+import { Database } from 'bun:sqlite'
 import { searchMessages } from '../../src/services/search.js'
 
 describe('search', () => {
-  let db: Database.Database
+  let db: Database
 
   beforeAll(() => {
     db = new Database(':memory:')
