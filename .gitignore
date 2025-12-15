@@ -33,3 +33,7 @@ npm-debug.log*
 
 # Temp files
 tmp/
+
+# Compiled binary
+shadowmsg
+*.bun-build
