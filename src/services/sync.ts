@@ -166,80 +166,88 @@ function syncMessages(sourceDb: Database, shadowDb: Database): number {
 
 function extractText(
   text: string | null,
-  attributedBody: Buffer | null
+  attributedBody: Uint8Array | null
 ): string | null {
-  // 1. Use text column if available and not empty
-  if (text && text.trim()) {
-    return text.trim()
+  // 1. Use text column if available and not a placeholder character
+  if (text) {
+    const trimmed = text.trim()
+    // Skip object replacement characters (U+FFFE, U+FFFC, U+FFFD)
+    // These indicate the actual content is in attributedBody
+    if (trimmed && trimmed !== '\uFFFE' && trimmed !== '\uFFFC' && trimmed !== '\uFFFD') {
+      return trimmed
+    }
   }
 
   // 2. Extract from attributedBody using proper NSAttributedString parser
   if (!attributedBody) return null
 
-  return extractFromAttributedBody(attributedBody)
+  // Convert Uint8Array to Buffer for compatibility with extractFromAttributedBody
+  return extractFromAttributedBody(Buffer.from(attributedBody))
 }
 
 function syncAttachments(
-  sourceDb: DatabaseType,
-  shadowDb: DatabaseType
+  sourceDb: Database,
+  shadowDb: Database
 ): number {
   const lastRowid = shadowDb
-    .prepare(
-      `SELECT last_rowid FROM sync_state WHERE table_name = 'attachment'`
-    )
+    .query(`SELECT last_rowid FROM sync_state WHERE table_name = 'attachment'`)
     .get() as { last_rowid: number }
 
   const rows = sourceDb
-    .prepare(
+    .query(
       `SELECT ROWID, guid, filename, mime_type, total_bytes
        FROM attachment WHERE ROWID > ?`
     )
-    .all(lastRowid.last_rowid)
+    .all(lastRowid.last_rowid) as Array<{
+      ROWID: number
+      guid: string
+      filename: string | null
+      mime_type: string | null
+      total_bytes: number | null
+    }>
 
   if (rows.length === 0) return 0
 
-  const insert = shadowDb.prepare(`
+  const insert = shadowDb.query(`
     INSERT OR REPLACE INTO attachment (ROWID, guid, filename, mime_type, total_bytes)
-    VALUES (@ROWID, @guid, @filename, @mime_type, @total_bytes)
+    VALUES (?, ?, ?, ?, ?)
   `)
 
   for (const row of rows) {
-    insert.run(row)
+    insert.run(row.ROWID, row.guid, row.filename, row.mime_type, row.total_bytes)
   }
 
   return rows.length
 }
 
 function syncMessageAttachmentJoin(
-  sourceDb: DatabaseType,
-  shadowDb: DatabaseType
+  sourceDb: Database,
+  shadowDb: Database
 ): void {
   const lastRowid = shadowDb
-    .prepare(
-      `SELECT last_rowid FROM sync_state WHERE table_name = 'message_attachment_join'`
-    )
+    .query(`SELECT last_rowid FROM sync_state WHERE table_name = 'message_attachment_join'`)
     .get() as { last_rowid: number }
 
   const rows = sourceDb
-    .prepare(
+    .query(
       `SELECT message_id, attachment_id
        FROM message_attachment_join WHERE message_id > ?`
     )
-    .all(lastRowid.last_rowid)
+    .all(lastRowid.last_rowid) as Array<{ message_id: number; attachment_id: number }>
 
   if (rows.length === 0) return
 
-  const insert = shadowDb.prepare(`
+  const insert = shadowDb.query(`
     INSERT OR REPLACE INTO message_attachment_join (message_id, attachment_id)
-    VALUES (@message_id, @attachment_id)
+    VALUES (?, ?)
   `)
 
   for (const row of rows) {
-    insert.run(row)
+    insert.run(row.message_id, row.attachment_id)
   }
 }
 
-function updateFtsIndexes(shadowDb: DatabaseType): void {
+function updateFtsIndexes(shadowDb: Database): void {
   // Rebuild FTS indexes for new data
   // Using INSERT INTO ... VALUES('rebuild') for full rebuild
   // For incremental, we rely on content= table sync

@@ -30,6 +30,10 @@ const END_MARKERS = [
 export function extractFromAttributedBody(buffer: Buffer): string | null {
   if (!buffer || buffer.length < 50) return null
 
+  // First, try to extract from RCS rich card (cardDescription field)
+  const rcsText = extractFromRcsRichCard(buffer)
+  if (rcsText) return rcsText
+
   // Find NSString marker - the text follows after this
   const nsStringIndex = findNSStringEnd(buffer)
   if (nsStringIndex < 0) return null
@@ -73,6 +77,101 @@ export function extractFromAttributedBody(buffer: Buffer): string | null {
 
   // Clean up any remaining binary artifacts
   text = cleanExtractedText(text)
+
+  // If the main text is just a replacement character, it's likely an RCS message
+  // with content stored elsewhere - return null to indicate no valid text
+  if (!text || text === '\uFFFE' || text === '\uFFFD') {
+    return null
+  }
+
+  return text || null
+}
+
+/**
+ * Extract text from RCS rich card format.
+ * RCS messages store content in cardDescription field within __kIMRichCardsAttributeName.
+ */
+function extractFromRcsRichCard(buffer: Buffer): string | null {
+  const bufStr = buffer.toString('binary')
+
+  // Check if this is an RCS rich card message
+  if (!bufStr.includes('__kIMRichCardsAttributeName')) {
+    return null
+  }
+
+  // Find cardDescription field
+  const cardDescMarker = 'cardDescription'
+  const cardDescIndex = bufStr.indexOf(cardDescMarker)
+  if (cardDescIndex < 0) return null
+
+  // After cardDescription, there's a length byte and then the UTF-8 text
+  // Pattern: cardDescription + marker bytes + length byte + text
+  let pos = cardDescIndex + cardDescMarker.length
+
+  // Skip marker bytes until we find the length indicator
+  while (pos < buffer.length && (buffer[pos] < 0x20 || buffer[pos] > 0x7e)) {
+    // Skip special bytes: 0x86, 0x92, 0x84, 0x98, 0x98, then length
+    pos++
+    if (pos - (cardDescIndex + cardDescMarker.length) > 20) break
+  }
+
+  // Now pos should be at or near the start of the text length
+  // Look for a reasonable length byte (the text content follows)
+  // The length is encoded as a single byte if < 128, otherwise multi-byte
+  let textLength = buffer[pos]
+  pos++
+
+  if (textLength >= 0x80) {
+    // Multi-byte length or this is actually content start
+    // Try to find the actual text start by looking for Korean UTF-8 or ASCII
+    pos--
+    while (pos < buffer.length - 10) {
+      // Check if this looks like UTF-8 text start
+      // Korean UTF-8 starts with 0xEC, 0xED, 0xEB, 0xEA (가-힣 range: U+AC00-U+D7A3)
+      // Or ASCII printable: 0x20-0x7E
+      if ((buffer[pos] >= 0x20 && buffer[pos] <= 0x7e) ||
+          buffer[pos] === 0x5b || // '[' for [Web발신]
+          (buffer[pos] >= 0xea && buffer[pos] <= 0xed)) {
+        break
+      }
+      pos++
+    }
+    textLength = 0 // Unknown length, will find end marker
+  }
+
+  const textStart = pos
+
+  // Find where the text ends - look for end markers
+  let textEnd = buffer.length
+  const endMarkers = [
+    Buffer.from([0x86, 0x86, 0x86, 0x86, 0x86]), // Common RCS end marker
+    Buffer.from([0x86, 0x86, 0x86, 0x86]),
+    // RCS rich card field names that follow cardDescription
+    Buffer.from('layout'),
+    Buffer.from('orientation'),
+    Buffer.from('imageAlignment'),
+    Buffer.from('width'),
+    Buffer.from('title'),
+  ]
+
+  for (const marker of endMarkers) {
+    const endIndex = buffer.indexOf(marker, textStart)
+    if (endIndex > textStart && endIndex < textEnd) {
+      textEnd = endIndex
+    }
+  }
+
+  if (textEnd <= textStart) return null
+
+  // Extract and decode as UTF-8
+  const textBuffer = buffer.subarray(textStart, textEnd)
+  let text = textBuffer.toString('utf-8')
+
+  // Clean up - remove any remaining RCS field artifacts
+  text = cleanExtractedText(text)
+  // Additional RCS-specific cleanup
+  text = text.replace(/layout(orientation)?q?(imageAlignment)?(width)?(title)?.*$/i, '')
+  text = text.replace(/[^\x20-\x7E\u3000-\u9FFF\uAC00-\uD7AF\n\r]*$/, '')
 
   return text || null
 }
