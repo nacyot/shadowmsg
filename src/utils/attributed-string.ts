@@ -127,10 +127,10 @@ function extractFromRcsRichCard(buffer: Buffer): string | null {
     pos--
     while (pos < buffer.length - 10) {
       // Check if this looks like UTF-8 text start
-      // Korean UTF-8 starts with 0xEC, 0xED, 0xEB, 0xEA (가-힣 range: U+AC00-U+D7A3)
+      // Korean UTF-8 starts with 0xEC, 0xED, 0xEB, 0xEA (range: U+AC00-U+D7A3)
       // Or ASCII printable: 0x20-0x7E
       if ((buffer[pos] >= 0x20 && buffer[pos] <= 0x7e) ||
-          buffer[pos] === 0x5b || // '[' for [Web발신]
+          buffer[pos] === 0x5b || // '[' for carrier prefix patterns
           (buffer[pos] >= 0xea && buffer[pos] <= 0xed)) {
         break
       }

@@ -11,7 +11,8 @@ const PLIST_LABEL = 'com.shadowmsg.push'
 const PLIST_DIR = path.join(os.homedir(), 'Library', 'LaunchAgents')
 const PLIST_PATH = path.join(PLIST_DIR, `${PLIST_LABEL}.plist`)
 const LOG_PATH = path.join(os.homedir(), '.shadowmsg', 'push.log')
-const PKG_NAME = '@home/shadowmsg'
+const PKG_JSON = JSON.parse(fs.readFileSync(new URL('../../package.json', import.meta.url), 'utf-8'))
+const PKG_NAME: string = PKG_JSON.name
 
 // --- Interactive prompts ---
 
@@ -152,7 +153,6 @@ const installService = buildCommand({
     // Verify bunx is available
     const bunxPath = resolveBunxPath()
 
-    // Package spec: @home/shadowmsg or @home/shadowmsg@0.2.0
     const pkgSpec = version ? `${PKG_NAME}@${version}` : PKG_NAME
 
     // Show summary
@@ -290,7 +290,7 @@ const serviceStatus = buildCommand({
     const urlMatch = plistContent.match(/SHADOWMSG_PUSH_URL<\/key>\s*<string>([^<]+)/)
     const hostMatch = plistContent.match(/SHADOWMSG_PUSH_HOST<\/key>\s*<string>([^<]+)/)
     const intervalMatch = plistContent.match(/<key>StartInterval<\/key>\s*<integer>(\d+)/)
-    const pkgMatch = plistContent.match(/@home\/shadowmsg[^<]*/)
+    const pkgMatch = plistContent.match(new RegExp(`${PKG_NAME.replace('/', '\\/')}[^<]*`))
 
     if (urlMatch) console.log(`  URL:       ${urlMatch[1]}`)
     if (hostMatch) console.log(`  Host:      ${hostMatch[1]}`)

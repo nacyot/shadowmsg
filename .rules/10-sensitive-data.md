@@ -22,7 +22,7 @@
 - Hardcoded credentials
 
 ### Localized Content
-- Korean characters: `[가-힣ㄱ-ㅎㅏ-ㅣ]`
+- Korean characters: `[\uAC00-\uD7A3\u3131-\u314E\u314F-\u3163]`
 - Region-specific company names (Coupang, Shinhan, etc.)
 
 ## Grep Commands for Verification
@@ -30,7 +30,7 @@
 ```bash
 # Korean characters (exclude .gitignore'd dirs)
 grep -r --include="*.ts" --include="*.js" --include="*.json" --include="*.md" \
-  -E '[가-힣ㄱ-ㅎㅏ-ㅣ]' . \
+  -P '[\x{AC00}-\x{D7A3}\x{3131}-\x{314E}\x{314F}-\x{3163}]' . \
   --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.notes \
   --exclude=package-lock.json
 
