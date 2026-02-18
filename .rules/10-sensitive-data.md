@@ -1,0 +1,55 @@
+# Sensitive Data Detection Rules
+
+## Patterns to Check
+
+### Phone Numbers
+- Korean: `+82`, `010`, `1577-`, `1588-`
+- Any 10+ digit number with country code
+
+### Personal Information
+- Real names (check test data)
+- Email addresses
+- Physical addresses
+- IP addresses
+
+### Financial Data
+- Currency amounts that look like real transactions
+- Card numbers, account numbers
+- Payment/order details
+
+### API & Secrets
+- `sk-`, `api_key`, `secret`, `token`, `password`
+- Hardcoded credentials
+
+### Localized Content
+- Korean characters: `[가-힣ㄱ-ㅎㅏ-ㅣ]`
+- Region-specific company names (Coupang, Shinhan, etc.)
+
+## Grep Commands for Verification
+
+```bash
+# Korean characters (exclude .gitignore'd dirs)
+grep -r --include="*.ts" --include="*.js" --include="*.json" --include="*.md" \
+  -E '[가-힣ㄱ-ㅎㅏ-ㅣ]' . \
+  --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.notes \
+  --exclude=package-lock.json
+
+# Korean phone numbers
+grep -r -E '\+82[0-9]|010[0-9]{8}|15(77|88)-' .
+
+# Git history check
+git log -p --all | grep -E '(pattern)'
+```
+
+## Safe Test Data Examples
+
+```typescript
+// Phone numbers
+'+1234567890', '+0987654321'
+
+// Names
+'Alice', 'Bob', 'Example Corp'
+
+// Messages
+'Order confirmed', 'Payment approved 10.00'
+```
