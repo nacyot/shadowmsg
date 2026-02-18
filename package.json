@@ -30,8 +30,6 @@
   },
   "type": "module",
   "dependencies": {
-    "@oclif/core": "^4",
-    "@oclif/plugin-help": "^6",
     "@stricli/core": "^1.2.4",
     "chalk": "^5.4.1"
   },
@@ -41,54 +39,22 @@
     "@types/node": "^22",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
-    "oclif": "^4.22.56",
     "shx": "^0.3.4",
     "typescript": "^5",
     "typescript-eslint": "^8.48.0",
     "vitest": "^3.2.4"
   },
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "files": [
     "./bin",
-    "./dist",
-    "./docs",
-    "./oclif.manifest.json"
+    "./src"
   ],
   "license": "MIT",
-  "main": "dist/index.js",
-  "oclif": {
-    "bin": "sm",
-    "dirname": "shadowmsg",
-    "commands": "./dist/commands",
-    "plugins": [
-      "@oclif/plugin-help"
-    ],
-    "topicSeparator": " ",
-    "topics": {
-      "message": {
-        "description": "Browse and view messages"
-      },
-      "sender": {
-        "description": "Manage sender aliases"
-      },
-      "contact": {
-        "description": "View synced contacts"
-      },
-      "sync": {
-        "description": "Sync messages from Messages.app"
-      }
-    }
-  },
+  "main": "src/cli.ts",
   "scripts": {
     "build": "shx rm -rf dist && tsc -b",
     "lint": "eslint src test",
-    "postpack": "shx rm -f oclif.manifest.json",
-    "prepack": "npm run build && oclif manifest",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "local-install": "./install.sh"
-  },
-  "types": "dist/index.d.ts"
+  }
 }

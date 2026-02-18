@@ -10,14 +10,13 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 echo "=== ShadowMSG Installation ==="
 echo ""
 
-# Check Node.js version
-NODE_VERSION=$(node -v 2>/dev/null | cut -d'v' -f2 | cut -d'.' -f1)
-if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" -lt 18 ]; then
-    echo "Error: Node.js 18+ is required"
-    echo "Current: $(node -v 2>/dev/null || echo 'not installed')"
+# Check Bun
+if ! command -v bun &> /dev/null; then
+    echo "Error: Bun is required"
+    echo "Install: curl -fsSL https://bun.sh/install | bash"
     exit 1
 fi
-echo "✓ Node.js $(node -v)"
+echo "✓ Bun $(bun --version)"
 
 # Create install directory
 mkdir -p "$INSTALL_DIR"
@@ -26,19 +25,13 @@ echo "✓ Install directory: $INSTALL_DIR"
 # Install dependencies
 echo ""
 echo "Installing dependencies..."
-npm install --prefix "$SCRIPT_DIR"
+cd "$SCRIPT_DIR" && bun install
 echo "✓ Dependencies installed"
-
-# Build
-echo ""
-echo "Building..."
-npm run build --prefix "$SCRIPT_DIR"
-echo "✓ Build complete"
 
 # Create wrapper script
 cat > "$INSTALL_DIR/sm" << EOF
 #!/bin/bash
-exec node "${SCRIPT_DIR}/bin/run.js" "\$@"
+exec bun "${SCRIPT_DIR}/src/cli.ts" "\$@"
 EOF
 chmod +x "$INSTALL_DIR/sm"
 echo "✓ Created $INSTALL_DIR/sm"
@@ -46,7 +39,7 @@ echo "✓ Created $INSTALL_DIR/sm"
 # Also create shadowmsg alias
 cat > "$INSTALL_DIR/shadowmsg" << EOF
 #!/bin/bash
-exec node "${SCRIPT_DIR}/bin/run.js" "\$@"
+exec bun "${SCRIPT_DIR}/src/cli.ts" "\$@"
 EOF
 chmod +x "$INSTALL_DIR/shadowmsg"
 echo "✓ Created $INSTALL_DIR/shadowmsg"
@@ -67,6 +60,7 @@ fi
 echo "Usage:"
 echo "  sm --help"
 echo "  sm init"
-echo "  sm sync"
+echo "  sm sync run"
 echo "  sm search \"keyword\""
+echo "  sm push --url <endpoint> --api-key <key>"
 echo ""

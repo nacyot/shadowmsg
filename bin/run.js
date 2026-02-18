@@ -1,5 +1,6 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
-import { execute } from '@oclif/core'
+import { run } from '@stricli/core'
+import { app } from '../src/app.js'
 
-await execute({ dir: import.meta.url })
+run(app, process.argv.slice(2), { process })
