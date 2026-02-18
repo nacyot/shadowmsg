@@ -118,6 +118,14 @@ export function initializeSchema(db: Database): void {
       last_sync_at TEXT
     );
 
+    -- push_state table (tracks watermark per push endpoint)
+    CREATE TABLE IF NOT EXISTS push_state (
+      endpoint TEXT PRIMARY KEY,
+      last_pushed_rowid INTEGER DEFAULT 0,
+      last_push_at TEXT,
+      total_pushed INTEGER DEFAULT 0
+    );
+
     -- Initialize sync_state
     INSERT OR IGNORE INTO sync_state (table_name, last_rowid) VALUES ('handle', 0);
     INSERT OR IGNORE INTO sync_state (table_name, last_rowid) VALUES ('message', 0);

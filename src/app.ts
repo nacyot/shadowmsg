@@ -17,6 +17,7 @@ import { messageCommands } from './stricli/message.js'
 import { senderCommands } from './stricli/sender.js'
 import { contactCommands } from './stricli/contact.js'
 import { ruleCommands } from './stricli/rule.js'
+import { pushCommand } from './stricli/push.js'
 
 export interface AppContext extends CommandContext {
   readonly process: NodeJS.Process
@@ -34,6 +35,7 @@ const routes = buildRouteMap({
     sender: senderCommands,
     contact: contactCommands,
     rule: ruleCommands,
+    push: pushCommand,
   },
   docs: {
     brief: 'ShadowMSG - macOS Messages CLI',
