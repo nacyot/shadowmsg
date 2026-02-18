@@ -6,6 +6,7 @@ export interface PushConfig {
   apiKey: string
   batchSize: number
   dryRun: boolean
+  host?: string
 }
 
 export interface PushResult {
@@ -38,7 +39,19 @@ interface BatchResult {
   skipped: number
 }
 
+function ensurePushStateTable(db: Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS push_state (
+      endpoint TEXT PRIMARY KEY,
+      last_pushed_rowid INTEGER DEFAULT 0,
+      last_push_at TEXT,
+      total_pushed INTEGER DEFAULT 0
+    )
+  `)
+}
+
 export function getPushState(db: Database, endpoint: string): PushState {
+  ensurePushStateTable(db)
   const row = db
     .query(`SELECT endpoint, last_pushed_rowid, last_push_at, total_pushed FROM push_state WHERE endpoint = ?`)
     .get(endpoint) as PushState | null
@@ -116,7 +129,7 @@ export async function pushMessages(
   config: PushConfig,
   options: PushOptions = {},
 ): Promise<PushResult> {
-  const { endpoint, apiKey, batchSize, dryRun } = config
+  const { endpoint, apiKey, batchSize, dryRun, host } = config
   const { onBatch, fetchFn = globalThis.fetch } = options
 
   const state = getPushState(db, endpoint)
@@ -144,12 +157,15 @@ export async function pushMessages(
     }
 
     const payload = formatPayload(rows)
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    }
+    if (host) headers['Host'] = host
+
     const response = await fetchFn(endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
+      headers,
       body: JSON.stringify(payload),
     })
 

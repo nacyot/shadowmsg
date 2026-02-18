@@ -19,6 +19,7 @@ export const pushCommand = buildCommand({
 
     const url = flags.url || process.env.SHADOWMSG_PUSH_URL
     const apiKey = flags['api-key'] || process.env.SHADOWMSG_PUSH_API_KEY
+    const host = flags.host || process.env.SHADOWMSG_PUSH_HOST || undefined
 
     if (!url) {
       console.error('Missing endpoint URL. Use ' + chalk.cyan('--url') + ' or set ' + chalk.cyan('SHADOWMSG_PUSH_URL'))
@@ -58,6 +59,7 @@ export const pushCommand = buildCommand({
         apiKey,
         batchSize: flags['batch-size'],
         dryRun: false,
+        host,
       }, {
         onBatch(batch, sent, imported, skipped) {
           const sentStr = sent.toString().padStart(4)
@@ -106,6 +108,12 @@ export const pushCommand = buildCommand({
         kind: 'boolean',
         brief: 'Show pending count without sending',
         default: false,
+      },
+      host: {
+        kind: 'parsed',
+        parse: String,
+        brief: 'Host header for reverse proxy (or SHADOWMSG_PUSH_HOST env)',
+        optional: true,
       },
       'no-sync': {
         kind: 'boolean',
