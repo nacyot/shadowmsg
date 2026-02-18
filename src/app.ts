@@ -47,6 +47,6 @@ const routes = buildRouteMap({
 export const app = buildApplication(routes, {
   name: 'shadowmsg',
   versionInfo: {
-    currentVersion: '0.1.1',
+    currentVersion: '0.2.0',
   },
 })

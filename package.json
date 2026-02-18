@@ -1,19 +1,16 @@
 {
-  "name": "shadowmsg",
+  "name": "@home/shadowmsg",
   "description": "macOS Messages CLI - Search and browse your messages",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "author": "nacyot",
   "repository": {
     "type": "git",
     "url": "https://github.com/nacyot/shadowmsg.git"
   },
-  "bugs": {
-    "url": "https://github.com/nacyot/shadowmsg/issues"
-  },
   "publishConfig": {
-    "access": "public"
+    "registry": "http://npm.app.local/",
+    "access": "restricted"
   },
-  "homepage": "https://github.com/nacyot/shadowmsg#readme",
   "keywords": [
     "macos",
     "messages",
@@ -21,8 +18,7 @@
     "sms",
     "cli",
     "search",
-    "sqlite",
-    "fts5"
+    "sqlite"
   ],
   "bin": {
     "shadowmsg": "./bin/run.js",
