@@ -40,7 +40,7 @@ function resolveBunxPath(): string {
   try {
     return execSync('which bunx', { encoding: 'utf-8' }).trim()
   } catch {
-    throw new Error('bunx not found. Install Bun: brew install oven-sh/bun/bun')
+    throw new Error('bunx not found. Install Bun: curl -fsSL https://bun.sh/install | bash')
   }
 }
 
